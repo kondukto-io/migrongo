@@ -109,7 +109,8 @@ func (m *Migrator) recordMigration(version string) error {
 
 // removeMigrationRecord removes a migration record from the database after a rollback
 func (m *Migrator) removeMigrationRecord(version string) error {
-	collection := m.dbClient.Database("migrations").Collection("applied")
+	var db = m.DBName
+	collection := m.dbClient.Database(db).Collection("migrations")
 
 	_, err := collection.DeleteOne(context.Background(), map[string]interface{}{
 		"version": version,

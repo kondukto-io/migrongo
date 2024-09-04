@@ -1,29 +1,37 @@
 package migrator
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// LatestVersion retrieves the latest migration version based on the script filenames
+// LatestVersion retrieves the latest applied migration version from the database
 func (m *Migrator) LatestVersion() (string, error) {
-	files, err := os.ReadDir(m.ScriptDir)
+	collection := m.dbClient.Database(m.DBName).Collection("migrations")
+
+	// Find the document with the highest version
+	opts := options.FindOne().SetSort(bson.D{{"version", -1}})
+	var result bson.M
+	err := collection.FindOne(context.Background(), bson.M{}, opts).Decode(&result)
 	if err != nil {
-		return "", fmt.Errorf("failed to read script directory: %w", err)
-	}
-
-	latestVersion := ""
-	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(file.Name(), ".js") {
-			version := extractVersionFromFileName(file.Name())
-			if version > latestVersion {
-				latestVersion = version
-			}
+		if err == mongo.ErrNoDocuments {
+			// No migrations have been applied yet
+			return "", nil
 		}
+		return "", fmt.Errorf("failed to fetch latest version: %w", err)
 	}
 
-	return latestVersion, nil
+	version, ok := result["version"].(string)
+	if !ok {
+		return "", fmt.Errorf("version format is not correct in the database")
+	}
+
+	return version, nil
 }
 
 // extractVersionFromFileName extracts the version from the migration script filename

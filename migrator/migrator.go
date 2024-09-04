@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"os"
 	"os/exec"
 	"time"
@@ -58,11 +59,11 @@ func (m *Migrator) runScript(scriptPath string) error {
 	return nil
 }
 
-// appliedMigrations retrieves applied migration versions from the database
+// AppliedMigrations retrieves applied migration versions from the migrations collection in the specified database
 func (m *Migrator) appliedMigrations() (map[string]bool, error) {
 	collection := m.dbClient.Database(m.DBName).Collection("migrations")
 
-	cursor, err := collection.Find(context.Background(), nil)
+	cursor, err := collection.Find(context.Background(), bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch applied migrations: %w", err)
 	}
@@ -70,7 +71,7 @@ func (m *Migrator) appliedMigrations() (map[string]bool, error) {
 
 	applied := make(map[string]bool)
 	for cursor.Next(context.Background()) {
-		var result map[string]interface{}
+		var result bson.M
 		if err := cursor.Decode(&result); err != nil {
 			return nil, fmt.Errorf("failed to decode applied migration: %w", err)
 		}
@@ -80,6 +81,12 @@ func (m *Migrator) appliedMigrations() (map[string]bool, error) {
 		}
 	}
 
+	// Check for any error during cursor iteration
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("error encountered while iterating cursor: %w", err)
+	}
+
+	// If no migrations have been applied, return an empty map without an error
 	return applied, nil
 }
 

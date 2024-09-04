@@ -22,47 +22,44 @@ To use Migrongo, import the package in your Go project and call the `Up` and `Do
 package main
 
 import (
+	"fmt"
 	"log"
-	"github.com/kondukto-io/migrongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/migrongo"
+	"your_project/infra" // Update with the correct import path for your infra package
 )
 
 func main() {
-	// MongoDB URI and script directory
-	clientOptions := options.Client()
-	scriptDir := "./scripts"
+	// Get MongoDB connection options
+	opts := infra.GetMongoDBOpts()
 
-	// Run Up migrations
-	if err := migrongo.Up(clientOptions, scriptDir); err != nil {
-		log.Fatalf("Failed to run up migrations: %v", err)
+	// Directory containing the migration scripts
+	scriptsDir := "./scripts-path"
+
+	// Create a new Migrator instance
+	migrator, err := migrongo.NewMigrator(opts, infra.DBName, scriptsDir)
+	if err != nil {
+		log.Fatalf("Error creating migrator: %v", err)
 	}
 
-	// Run Down migrations
-	if err := migrongo.Down(clientOptions, scriptDir); err != nil {
-		log.Fatalf("Failed to run down migrations: %v", err)
+	// Retrieve the latest migration version
+	version, err := migrator.LatestVersion()
+	if err != nil {
+		log.Fatalf("Error getting the latest version: %v", err)
+	}
+	fmt.Printf("Current latest version: %d\n", version)
+
+	// Run migrations in the 'up' direction
+	if err := migrator.Up(); err != nil {
+		log.Fatalf("Error running migrations up: %v", err)
+	}
+
+	// Run migrations in the 'down' direction
+	if err := migrator.Down(); err != nil {
+		log.Fatalf("Error running migrations down: %v", err)
 	}
 }
 ```
-
-### Example
-
-1. **Up Migrations**: To apply all pending "up" migrations:
-
-    ```go
-    err := migrongo.Up(opts, "./scripts")
-    if err != nil {
-        log.Fatalf("Failed to apply up migrations: %v", err)
-    }
-    ```
-
-2. **Down Migrations**: To rollback the most recent "down" migrations:
-
-    ```go
-    err := migrongo.Down(opts, "./scripts")
-    if err != nil {
-        log.Fatalf("Failed to rollback down migrations: %v", err)
-    }
-    ```
 
 ## Writing Migrations
 

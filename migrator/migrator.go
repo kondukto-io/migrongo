@@ -41,6 +41,7 @@ func NewMigrator(mongoClientOptions *options.ClientOptions, dbName, scriptDir st
 		ScriptDir:          scriptDir,
 		MongoClientOptions: mongoClientOptions,
 		dbClient:           client,
+		DBName:             dbName,
 	}, nil
 }
 

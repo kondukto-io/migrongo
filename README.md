@@ -1,49 +1,22 @@
-# **Migrongo**
+# Migrongo
 
-**Migrongo** is a Go package designed to handle MongoDB migrations using JavaScript files. It executes each migration in order and keeps track of the versions that have already been applied, similar to tools like `go-migrate`.
+`Migrongo` is a Go package designed to handle MongoDB migrations using JavaScript files and the `mongosh` shell.
 
-## **Features**
+## Overview
 
-- Execute MongoDB migrations using `mongosh`.
-- Automatic version tracking to prevent re-running migrations.
+Migrongo allows you to manage your MongoDB schema evolution by running migration scripts written in JavaScript. The package provides an easy way to run "up" and "down" migrations to apply and rollback changes.
 
-## **Installation**
+## Installation
 
-To install the package, you can use `go get`:
+First, install the package using `go get`:
 
 ```bash
-go get github.com/kondukto-io/migrongo
+go get github.com/migrongo
 ```
 
-## **Usage**
+## Usage
 
-### **1. Create Migration Files**
-
-Create your migration scripts in a designated directory (e.g., `migrations/`). Each file should be named with a version prefix followed by an underscore and a description. Example:
-
-```
-migrations/
-│
-├── 001_initial_setup.js
-├── 002_add_indexes.js
-└── 003_update_schema.js
-```
-
-### **2. Write Your Migrations**
-
-Each migration script should contain valid MongoDB JavaScript commands. For example:
-
-```javascript
-// 001_initial_setup.js
-db.createCollection("users");
-
-// 002_add_indexes.js
-db.users.createIndex({ "email": 1 }, { unique: true });
-```
-
-### **3. Integrate Migrongo in Your Go Application**
-
-In your main application, initialize and run the migrator:
+To use Migrongo, import the package in your Go project and call the `Up` and `Down` functions as needed.
 
 ```go
 package main
@@ -51,36 +24,89 @@ package main
 import (
 	"log"
 	"github.com/kondukto-io/migrongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
-	clientURI := "mongodb://localhost:27017"
-	migrationsDir := "./migrations"
+	// MongoDB URI and script directory
+	clientOptions := options.Client()
+	scriptDir := "./scripts"
 
-	migrator := migrongo.NewMigrator(clientURI, migrationsDir)
-	err := migrator.RunMigrations()
-	if err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
+	// Run Up migrations
+	if err := migrongo.Up(clientOptions, scriptDir); err != nil {
+		log.Fatalf("Failed to run up migrations: %v", err)
+	}
+
+	// Run Down migrations
+	if err := migrongo.Down(clientOptions, scriptDir); err != nil {
+		log.Fatalf("Failed to run down migrations: %v", err)
 	}
 }
 ```
 
-### **4. Run Your Application**
+### Example
 
-Run your Go application, and Migrongo will automatically execute the migration files in order.
+1. **Up Migrations**: To apply all pending "up" migrations:
 
-```bash
-go run main.go
+    ```go
+    err := migrongo.Up(opts, "./scripts")
+    if err != nil {
+        log.Fatalf("Failed to apply up migrations: %v", err)
+    }
+    ```
+
+2. **Down Migrations**: To rollback the most recent "down" migrations:
+
+    ```go
+    err := migrongo.Down(opts, "./scripts")
+    if err != nil {
+        log.Fatalf("Failed to rollback down migrations: %v", err)
+    }
+    ```
+
+## Writing Migrations
+
+Migration scripts should be placed in a directory (e.g., `./scripts`) and should follow a specific naming convention to ensure proper ordering and version control.
+
+### Naming Convention
+
+- Migrations should be named with a version number, direction (`up` or `down`), and a description. For example:
+    - `001_up_create_users.js`
+    - `001_down_create_users.js`
+    - `002_up_add_email_to_users.js`
+    - `002_down_add_email_to_users.js`
+
+### Script Content
+
+Each migration script should contain valid JavaScript code that can be executed in the MongoDB shell. For example:
+
+```javascript
+// 001_up_create_users.js
+db.createCollection("users");
+
+// 002_up_add_email_to_users.js
+db.users.updateMany({}, { $set: { email: "" } });
 ```
 
-### **5. Migration Versioning**
+## Version Tracking
 
-MongoMigrate automatically tracks applied migrations in a special collection (`migrations`) within your MongoDB. This ensures each migration runs only once.
+Migrongo uses a `migrations` collection in your MongoDB database to keep track of which migrations have been applied. This prevents migrations from being run multiple times.
 
-## **License**
+- **Applying Migrations**: When you run `Up`, the applied migrations are recorded in the `migrations` collection.
+- **Rolling Back Migrations**: When you run `Down`, the corresponding migration records are removed from the `migrations` collection to keep the state consistent.
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for more details.
+## Error Handling
 
-## **Contributing**
+If a migration fails, Migrongo stops the execution and returns an error. It’s recommended to handle these errors in your application logic to ensure consistent state management.
 
-Contributions are welcome! Please feel free to submit a pull request or open an issue if you encounter any bugs or have suggestions for new features.
+## Contributing
+
+Contributions are welcome! Please fork the repository and submit a pull request for any improvements or bug fixes.
+
+## License
+
+Migrongo is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+
+## Contact
+
+For any questions or issues, please open an issue on the GitHub repository.

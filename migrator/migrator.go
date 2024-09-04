@@ -15,16 +15,15 @@ import (
 
 type Migrator struct {
 	ScriptDir          string
+	DBName             string
 	MongoClientOptions *options.ClientOptions
 	dbClient           *mongo.Client
 }
 
 // NewMigrator creates a new Migrator instance
-func NewMigrator(mongoClientOptions *options.ClientOptions, scriptDir string) (*Migrator, error) {
-	var db = mongoClientOptions.Auth.AuthSource
-
-	if db == "" {
-		return nil, errors.New("auth source cannot be empty")
+func NewMigrator(mongoClientOptions *options.ClientOptions, dbName, scriptDir string) (*Migrator, error) {
+	if dbName == "" {
+		return nil, errors.New("db name cannot be empty")
 	}
 
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoClientOptions.GetURI()))
@@ -61,8 +60,7 @@ func (m *Migrator) runScript(scriptPath string) error {
 
 // appliedMigrations retrieves applied migration versions from the database
 func (m *Migrator) appliedMigrations() (map[string]bool, error) {
-	var db = m.MongoClientOptions.Auth.AuthSource
-	collection := m.dbClient.Database(db).Collection("migrations")
+	collection := m.dbClient.Database(m.DBName).Collection("migrations")
 
 	cursor, err := collection.Find(context.Background(), nil)
 	if err != nil {
@@ -87,7 +85,7 @@ func (m *Migrator) appliedMigrations() (map[string]bool, error) {
 
 // recordMigration records a migration as applied in the database
 func (m *Migrator) recordMigration(version string) error {
-	var db = m.MongoClientOptions.Auth.AuthSource
+	var db = m.DBName
 	collection := m.dbClient.Database(db).Collection("migrations")
 
 	_, err := collection.InsertOne(context.Background(), map[string]interface{}{

@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/migrongo"
+	"github.com/kondukto-io/migrongo"
 	"your_project/infra" // Update with the correct import path for your infra package
 )
 

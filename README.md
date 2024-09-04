@@ -11,7 +11,7 @@ Migrongo allows you to manage your MongoDB schema evolution by running migration
 First, install the package using `go get`:
 
 ```bash
-go get github.com/migrongo
+go get github.com/kondukto-io/migrongo
 ```
 
 ## Usage

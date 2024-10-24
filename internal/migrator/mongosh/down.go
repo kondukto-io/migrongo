@@ -26,7 +26,7 @@ func (m *MongoSH) Down() error {
 				continue
 			}
 
-			scriptPath := filepath.Join(file.Name())
+			scriptPath := filepath.Join(files.BaseDir, file.Name())
 			if err := m.runScript(scriptPath); err != nil {
 				return err
 			}

@@ -25,39 +25,47 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kondukto-io/migrongo"
+	"github.com/kondukto-io/migrongo/pkg"
 	"your_project/infra" // Update with the correct import path for your infra package
 )
 
 func main() {
-	// Get MongoDB connection options
-	opts := infra.GetMongoDBOpts()
-
-	// Directory containing the migration scripts
-	scriptsDir := "./scripts-path"
-
-	// Create a new Migrator instance
-	migrator, err := migrongo.NewMigrator(opts, infra.DBName, scriptsDir)
-	if err != nil {
-		log.Fatalf("Error creating migrator: %v", err)
-	}
-
-	// Retrieve the latest migration version
-	version, err := migrator.LatestVersion()
-	if err != nil {
-		log.Fatalf("Error getting the latest version: %v", err)
-	}
-	fmt.Printf("Current latest version: %d\n", version)
-
-	// Run migrations in the 'up' direction
-	if err := migrator.Up(); err != nil {
-		log.Fatalf("Error running migrations up: %v", err)
-	}
-
-	// Run migrations in the 'down' direction
-	if err := migrator.Down(); err != nil {
-		log.Fatalf("Error running migrations down: %v", err)
-	}
+    // Get MongoDB connection options
+    opts := infra.GetMongoDBOpts()
+  
+    // Directory containing the migration scripts
+    scriptsDir := "/scripts-path"
+  
+    config := migrongo.Config{
+      FilePathFetcherConfig: &migrongo.FilePathFetcherConfig{Dir: scriptsDir},
+      MongoSHMigratorConfig: &migrongo.MongoSHConfig{
+        DBName:             infra.DBName,
+        MongoClientOptions: opts,
+      },
+    }
+  
+    migron, err := migrongo.NewClient(config)
+    if err != nil {
+      return fmt.Errorf("failed to init migrongo client :%w", err)
+    }
+  
+    // Retrieve the latest migration version
+    version, err := migron.LatestVersion()
+    if err != nil {
+      return fmt.Errorf("error getting the latest version: %w", err)
+    }
+  
+    logger.Log.Infof("current latest version: %s\n", version)
+  
+    // Run migrations in the 'up' direction
+    if err := migron.Up(); err != nil {
+      return fmt.Errorf("error running migrations up: %w", err)
+    }
+  
+    // Run migrations in the 'down' direction
+    if err := migron.Down(); err != nil {
+      return fmt.Errorf("error running migrations down: %w", err)
+    }
 }
 ```
 

@@ -1,8 +1,6 @@
 package script_fetcher
 
 import (
-	"io/fs"
-
 	"github.com/kondukto-io/migrongo/internal/script_fetcher/file_path"
 )
 
@@ -14,10 +12,6 @@ func NewScriptFetcher(config Config) (ScriptFetcher, error) {
 }
 
 type (
-	ScriptMetadata struct {
-		DirFiles []fs.DirEntry
-	}
-
 	Config struct {
 		Type           string
 		FilePathConfig *FilePathConfig

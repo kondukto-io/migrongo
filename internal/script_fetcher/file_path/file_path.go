@@ -21,5 +21,5 @@ func (f *FilePath) GetScripts() (*types.ScriptMetadata, error) {
 		return nil, fmt.Errorf("failed to read script directory: %w", err)
 	}
 
-	return &types.ScriptMetadata{DirFiles: files}, nil
+	return &types.ScriptMetadata{DirFiles: files, BaseDir: f.Dir}, nil
 }

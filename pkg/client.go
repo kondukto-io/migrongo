@@ -5,8 +5,6 @@ import (
 
 	"github.com/kondukto-io/migrongo/internal/migrator"
 	"github.com/kondukto-io/migrongo/internal/script_fetcher"
-
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func NewClient(config Config) (*Client, error) {
@@ -22,8 +20,8 @@ func NewClient(config Config) (*Client, error) {
 	migratorConfig := migrator.Config{
 		ScriptFetcher: fetcher,
 		MongoSHConfig: &migrator.MongoSHConfig{
-			DBName:             config.MongoSHMigratorConfig.DBName,
-			MongoClientOptions: config.MongoSHMigratorConfig.MongoClientOptions,
+			DBName:   config.MongoSHMigratorConfig.DBName,
+			MongoURI: config.MongoSHMigratorConfig.MongoURI,
 		},
 	}
 
@@ -66,7 +64,7 @@ type (
 	}
 
 	MongoSHConfig struct {
-		DBName             string
-		MongoClientOptions *options.ClientOptions
+		DBName   string
+		MongoURI string
 	}
 )

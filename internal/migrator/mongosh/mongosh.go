@@ -18,18 +18,18 @@ import (
 
 type MongoSH struct {
 	dbName        string
-	clientOpts    *options.ClientOptions
+	mongoURI      string
 	dbClient      *mongo.Client
 	scriptFetcher script_fetcher.ScriptFetcher
 }
 
 // NewMongoSH creates a new MongoSH instance
-func NewMongoSH(mongoClientOptions *options.ClientOptions, scriptFetcher script_fetcher.ScriptFetcher, dbName string) (*MongoSH, error) {
+func NewMongoSH(mongoURI string, scriptFetcher script_fetcher.ScriptFetcher, dbName string) (*MongoSH, error) {
 	if dbName == "" {
 		return nil, errors.New("db name cannot be empty")
 	}
 
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoClientOptions.GetURI()))
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
@@ -40,7 +40,7 @@ func NewMongoSH(mongoClientOptions *options.ClientOptions, scriptFetcher script_
 	}
 
 	return &MongoSH{
-		clientOpts:    mongoClientOptions,
+		mongoURI:      mongoURI,
 		scriptFetcher: scriptFetcher,
 		dbClient:      client,
 		dbName:        dbName,
@@ -49,9 +49,7 @@ func NewMongoSH(mongoClientOptions *options.ClientOptions, scriptFetcher script_
 
 // runScript executes a given JavaScript file using mongosh
 func (m *MongoSH) runScript(scriptPath string) error {
-	var dbURI = m.clientOpts.GetURI()
-
-	cmd := exec.Command("mongosh", dbURI, "--file", scriptPath)
+	cmd := exec.Command("mongosh", m.mongoURI, "--file", scriptPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
